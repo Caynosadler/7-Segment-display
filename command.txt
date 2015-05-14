@@ -1,0 +1,1 @@
+D:\apps\arduino-1.0.5-r2\hardware\tools\avr\bin avrdude -C"D:\apps\arduino-1.0.5-r2\hardware\tools\avr\etc\avrdude.conf" -v -v -v -v -patmega32u4 -carduino -P\\.\COM9 -b19200 -Uflash:w:C:\Users\GUSTAV~1\AppData\Local\Temp\build6462024294536373929.tmp\R01_Logo.cpp.hex:i -F
