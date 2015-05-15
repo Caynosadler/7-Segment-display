@@ -28,12 +28,17 @@
 const int trigPin = D3;
 const int echoPin = D1;
  
+bool turned = false;
+ 
 void setup() {
   // initialize serial communication:
   Robot.begin();
+  Robot.beginTFT();
   Serial.begin(9600);
+  
+  delay(1000);
 }
- 
+
 void loop()
 {
   // establish variables for duration of the ping, 
@@ -59,21 +64,27 @@ void loop()
   inches = microsecondsToInches(duration);
   cm = microsecondsToCentimeters(duration);
   
-  //Serial.print(inches);
-  //Serial.print("in, ");
-  //Serial.print(cm);
-  //Serial.print("cm");
-  //Serial.println();
+  Serial.print(inches);
+  Serial.print("in, ");
+  Serial.print(cm);
+  Serial.print("cm");
+  Serial.println();
   
-  int velMod = controladorDeVelocidade(cm);
+  int velMod = velocityControl(cm);
   
   if (velMod == 0) {
-    Robot.pointTo(90);
+    if (turned) {
+      Robot.pointTo(90);
+      turned = false;
+    } else {
+      Robot.pointTo(-90);
+      turned = true;
+    }
   } else {
     Robot.motorsWrite(255/velMod, 255/velMod);
   }
   
-  delay(100);
+  delay(50);
 }
  
 long microsecondsToInches(long microseconds)
@@ -94,7 +105,7 @@ long microsecondsToCentimeters(long microseconds)
   return microseconds / 26.5 / 2;
 }
 
-int controladorDeVelocidade(int cm)
+int velocityControl(int cm)
 {
   int mod;
   
@@ -107,9 +118,6 @@ int controladorDeVelocidade(int cm)
   } else if (cm > 300) {
     mod = 1;
   }
-  
-  Serial.print(mod);
-  Serial.println();
   
   return mod;
 }
