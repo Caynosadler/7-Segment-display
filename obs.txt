@@ -1,0 +1,8 @@
+observações do robo arduino robot:
+-bateria influencia na velocidade do robo;
+-criar uma biblioteca melhor para input de parametros de configuração do robo;
+-precisamos de 3 sensores ultrassonicos;
+-função turn regula a velocidade da roda sem travar o processamento do arduino de cima, enquanto a função pointTo segura até terminar o que determina se completou atraves da leitura da bussula;
+-pedir ajuda ao cara da namorada/palio/cariacica;
+
+
