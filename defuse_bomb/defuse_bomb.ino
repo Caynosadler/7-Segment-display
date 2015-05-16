@@ -3,37 +3,9 @@
 #include <SPI.h>
 #include <utility/RobotTextManager.h>
 #include <avr/pgmspace.h>
-
-/* HC-SR04 Sensor
-   https://www.dealextreme.com/p/hc-sr04-ultrasonic-sensor-distance-measuring-module-133696
-  
-   This sketch reads a HC-SR04 ultrasonic rangefinder and returns the
-   distance to the closest object in range. To do this, it sends a pulse
-   to the sensor to initiate a reading, then listens for a pulse 
-   to return.  The length of the returning pulse is proportional to 
-   the distance of the object from the sensor.
-     
-   The circuit:
-	* VCC connection of the sensor attached to +5V
-	* GND connection of the sensor attached to ground
-	* TRIG connection of the sensor attached to digital pin 2
-	* ECHO connection of the sensor attached to digital pin 4
-
-
-   Original code for Ping))) example was created by David A. Mellis
-   Adapted for HC-SR04 by Tautvidas Sipavicius
-
-   This example code is in the public domain.
- */
  
 const int trigPin = D3;
 const int echoPin = D1;
-
-int stepCount = 1;
-bool stepsEnd = false;
-bool robotReady = false;
- 
-int robotSpeed;
 
 void setup() {
   // initialize serial communication:
@@ -44,51 +16,40 @@ void setup() {
   Robot.beginTFT();
   Robot.beginSD();
   
-
   //Robot.waitContinue();
 }
 
-int motorSpeed;
+
+int stepCount = 1;
+bool stepsEnd = false;
+bool robotReady = false;
+ 
+int robotSpeed;
 
 void loop()
-{
-  
+{  
   //Serial.println(Robot.keyboardRead());
   
-  Robot.setCursor(40, 50);
-  Robot.print(getSpeedFromKnob(Robot.knobRead()));
-  
   keyDown(Robot.keyboardRead());
+  robotSpeed = getSpeedFromKnob(Robot.knobRead());
   
   if (robotReady) {
     // establish variables for duration of the ping, 
     // and the distance result in inches and centimeters:
     long duration, inches, cm;
-   
-    // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-    // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-    pinMode(trigPin, OUTPUT);
-    digitalWrite(trigPin, LOW);
-    delayMicroseconds(2);
-    digitalWrite(trigPin, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(trigPin, LOW);
-      
-    // Read the signal from the sensor: a HIGH pulse whose
-    // duration is the time (in microseconds) from the sending
-    // of the ping to the reception of its echo off of an object.
-    pinMode(echoPin, INPUT);
-    duration = pulseIn(echoPin, HIGH);
+    
+    duration = getDuration();
    
     // convert the time into a distance
     inches = microsecondsToInches(duration);
     cm = microsecondsToCentimeters(duration);
     
-    Serial.print(inches);
-    Serial.print("in, ");
-    Serial.print(cm);
-    Serial.print("cm");
-    Serial.println();
+    debugUltrasonic(inches, cm);
+    //Serial.print(inches);
+    //Serial.print("in, ");
+    //Serial.print(cm);
+    //Serial.print("cm");
+    //Serial.println();
     
     switch(stepCount) {
       case 1:
@@ -107,7 +68,7 @@ void loop()
         if (cm <= 65) {
           Robot.pointTo(-90);
           stepCount++;
-          stepsEnd = true;
+          //stepsEnd = true;
         }
       }
     }
@@ -118,7 +79,36 @@ void loop()
   delay(50);
 }
 
-void keyDown(int keyCode) {
+long getDuration() 
+{
+  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
+  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
+  pinMode(trigPin, OUTPUT);
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+    
+  // Read the signal from the sensor: a HIGH pulse whose
+  // duration is the time (in microseconds) from the sending
+  // of the ping to the reception of its echo off of an object.
+  pinMode(echoPin, INPUT);
+  
+  return pulseIn(echoPin, HIGH);
+}
+
+void debugUltrasonic(int cm, int inches) 
+{
+  Serial.print(inches);
+  Serial.print("in, ");
+  Serial.print(cm);
+  Serial.print("cm");
+  Serial.println();
+}
+
+void keyDown(int keyCode) 
+{
   switch (keyCode) {
     case BUTTON_LEFT:
       break;
@@ -129,7 +119,6 @@ void keyDown(int keyCode) {
     case BUTTON_DOWN:
       break;
     case BUTTON_MIDDLE:
-      robotSpeed = Robot.knobRead();
       robotReady = true;
       break;
     case BUTTON_NONE:
@@ -137,18 +126,34 @@ void keyDown(int keyCode) {
   }
 }
 
-int getSpeedFromKnob(int val) {
-  static int val_old;
-  int r = map(val, 0, 1023, 0, 255);
+
+void printSpeedInfo(int speed, bool clear = false) 
+{
+    Robot.textSize(1);
+    Robot.setCursor(40, 50);
+    if (clear) { 
+      Robot.stroke(255, 255, 255);
+    } else {
+      Robot.stroke(0, 0, 0);
+    }
+    //Robot.print(printf("Speed: %s", speed));
+    Robot.print(speed);
+}
+
+int getSpeedFromKnob(int knob) 
+{
+  static int speed_old;
+  int speed = map(knob, 0, 1023, 0, 255);
+  printSpeedInfo(speed);
 
   //Only updates when the
   //value changes.
-  if (val_old != r) {
-    Robot.clearScreen();
-    val_old = r;
+  if (speed_old != speed) {
+    speed_old = speed;
+    printSpeedInfo(speed, true);
   }
   
-  return r;
+  return speed;
 }
  
 long microsecondsToInches(long microseconds)
