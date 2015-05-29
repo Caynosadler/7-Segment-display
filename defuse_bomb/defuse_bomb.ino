@@ -1,13 +1,15 @@
 #include <ArduinoRobot.h>
 #include <Wire.h>
 #include <SPI.h>
-#include <utility/RobotTextManager.h>
-#include <avr/pgmspace.h>
  
-const int trigPin = D3;
-const int echoPin = D1;
+const int echoPinL = D4;
+const int trigPinL = D5;
+const int echoPinR = D2;
+const int trigPinR = D0;
+const int echoPinF = D1;
+const int trigPinF = D3;
 
-void setup() {
+void setup() { 
   // initialize serial communication:
   Serial.begin(9600);
   
@@ -15,6 +17,13 @@ void setup() {
   Robot.begin();
   Robot.beginTFT();
   Robot.beginSD();
+  
+  pinMode(trigPinL, OUTPUT);
+  pinMode(trigPinR, OUTPUT);
+  pinMode(trigPinF, OUTPUT);
+  pinMode(echoPinL, INPUT);
+  pinMode(echoPinR, INPUT);
+  pinMode(echoPinF, INPUT);
   
   //Robot.waitContinue();
 }
@@ -28,78 +37,70 @@ int robotSpeed;
 
 void loop()
 {  
-  //Serial.println(Robot.keyboardRead());
-  
-  keyDown(Robot.keyboardRead());
   robotSpeed = getSpeedFromKnob(Robot.knobRead());
+  Robot.motorsWrite(robotSpeed, robotSpeed);
   
-  if (robotReady) {
-    // establish variables for duration of the ping, 
-    // and the distance result in inches and centimeters:
-    long duration, inches, cm;
-    
-    duration = getDuration();
-   
-    // convert the time into a distance
-    inches = microsecondsToInches(duration);
-    cm = microsecondsToCentimeters(duration);
-    
-    debugUltrasonic(inches, cm);
-    //Serial.print(inches);
-    //Serial.print("in, ");
-    //Serial.print(cm);
-    //Serial.print("cm");
-    //Serial.println();
-    
-    switch(stepCount) {
-      case 1:
-        if (cm <= 5) {
-          Robot.pointTo(45);
-          stepCount++;
-        }
-        break;
-      case 2:
-        if (cm <= 5) {
-          Robot.pointTo(-45);
-          stepCount++;
-        }
-        break;
-      case 3: {
-        if (cm <= 65) {
-          Robot.pointTo(-90);
-          stepCount++;
-          //stepsEnd = true;
-        }
-      }
-    }
-    
-    if (!stepsEnd) Robot.motorsWrite(robotSpeed, robotSpeed);
-  }
+  long cmL = getDistance('L');
+  debugUltrasonic("L", cmL);
+  
+  long cmR = getDistance('R');
+  debugUltrasonic("R", cmR);
+  
+  long cmF = getDistance('F');
+  debugUltrasonic("F", cmF);
+  
+  straightLine(cmL, cmR);
   
   delay(50);
 }
 
-long getDuration() 
-{
-  // The sensor is triggered by a HIGH pulse of 10 or more microseconds.
-  // Give a short LOW pulse beforehand to ensure a clean HIGH pulse:
-  pinMode(trigPin, OUTPUT);
-  digitalWrite(trigPin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trigPin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trigPin, LOW);
-    
-  // Read the signal from the sensor: a HIGH pulse whose
-  // duration is the time (in microseconds) from the sending
-  // of the ping to the reception of its echo off of an object.
-  pinMode(echoPin, INPUT);
-  
-  return pulseIn(echoPin, HIGH);
+void straightLine(long l, long r) {
+  if (l <= 5) Robot.turn(0.5);
+  if (r <= 5) Robot.turn(-0.5);
 }
 
-void debugUltrasonic(int cm, int inches) 
+void makeTrig(int port) {
+  digitalWrite(port, LOW);
+  delayMicroseconds(2);
+  digitalWrite(port, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(port, LOW);
+}
+
+long getDistance(char p) 
 {
+  //microsecondsToInches(durationR);
+  long echo;
+  switch (p) {
+    case 'L':
+      makeTrig(trigPinL);
+      echo = pulseIn(echoPinL, HIGH);
+      return microsecondsToCentimeters(echo);
+      break;
+    case 'R':
+      makeTrig(trigPinR);
+      echo = pulseIn(echoPinR, HIGH);
+      return microsecondsToCentimeters(echo);
+      break;
+    case 'F':
+      makeTrig(trigPinF);
+      echo = pulseIn(echoPinF, HIGH);
+      return microsecondsToCentimeters(echo);
+      break;
+  }
+}
+
+void debugUltrasonic(String p, int cm)
+{
+  Serial.print(p + " ");
+  Serial.print(cm);
+  Serial.print("cm");
+  Serial.println();
+}
+
+void debugUltrasonic(String p, int cm, int inches)
+{
+  Serial.print(p + " - ");
   Serial.print(inches);
   Serial.print("in, ");
   Serial.print(cm);
@@ -119,6 +120,9 @@ void keyDown(int keyCode)
     case BUTTON_DOWN:
       break;
     case BUTTON_MIDDLE:
+      Robot.setCursor(50, 60); 
+      Robot.stroke(255, 255, 255);
+      Robot.print("Ready");
       robotReady = true;
       break;
     case BUTTON_NONE:

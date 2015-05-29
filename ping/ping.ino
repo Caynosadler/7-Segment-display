@@ -2,8 +2,8 @@
 #include <Wire.h>
 #include <SPI.h>
 
-const int trig = D4; // Trig D4 || 8
-const int echo = D3; // Echo D3 || 7
+const int trig = D3; // Trig D4 || 8
+const int echo = D1; // Echo D3 || 7
 
 void setup() {
 //  Robot.begin();
