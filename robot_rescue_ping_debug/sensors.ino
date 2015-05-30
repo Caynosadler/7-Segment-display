@@ -15,18 +15,18 @@ long getDistance(char p)  {
   long echo;
   switch (p) {
     case 'L':
-      makeTrig(TRIG_PIN_L);
-      echo = pulseIn(ECHO_PIN_L, HIGH);
+      makeTrig(trigPinL);
+      echo = pulseIn(echoPinL, HIGH);
       return microsecondsToCentimeters(echo);
       break;
     case 'R':
-      makeTrig(TRIG_PIN_R);
-      echo = pulseIn(ECHO_PIN_R, HIGH);
+      makeTrig(trigPinR);
+      echo = pulseIn(echoPinR, HIGH);
       return microsecondsToCentimeters(echo);
       break;
     case 'F':
-      makeTrig(TRIG_PIN_F);
-      echo = pulseIn(ECHO_PIN_F, HIGH);
+      makeTrig(trigPinF);
+      echo = pulseIn(echoPinF, HIGH);
       return microsecondsToCentimeters(echo);
       break;
   }
