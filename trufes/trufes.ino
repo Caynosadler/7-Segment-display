@@ -41,7 +41,7 @@ int states_bomb [11][3] = {
   {8, 10, -1},
   {9, 10, -1},
   {10, -1, -1}
-}
+};
 
 //condicoes dos estados
 char condition_states_bomb[11] = {'A', 'B', 'C', 'D', 'D', 'G', 'G', 'E', 'F', 'E', 'M'};
