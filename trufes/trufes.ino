@@ -6,12 +6,17 @@
 
 Coded by: João Carlos Pandolfi Santana (06/06/2015)
 */
+#include <NewPing.h>
+#include <Wire.h>
 
-#define trig_Pin 13 //Pino 13 envia o pulso para gerar o echo
 //Sensores Ultrassom
-#define echo_Pin_L 12
-#define echo_Pin_M 11
-#define echo_Pin_R 10
+#define ECHO_PIN_F 2
+#define TRIG_PIN_F 4
+#define ECHO_PIN_L 5
+#define TRIG_PIN_L 6
+#define ECHO_PIN_R 7
+#define TRIG_PIN_R 10
+#define MAX_DISTANCE 300
 
 //Distancias
 #define WALL_DISTANCE 10    // 10 centimetros
@@ -50,10 +55,12 @@ char condition_states_bomb[11] = {'A', 'B', 'C', 'D', 'D', 'G', 'G', 'E', 'F', '
 void setup() {
   Serial.begin(9600);
   //Sensores de ultrassom
-  pinMode(trig_Pin, OUTPUT);
-  pinMode(echo_Pin_L, INPUT);
-  pinMode(echo_Pin_M, INPUT);
-  pinMode(echo_Pin_R, INPUT);
+  pinMode(TRIG_PIN_L, OUTPUT);
+  pinMode(TRIG_PIN_R, OUTPUT);
+  pinMode(TRIG_PIN_F, OUTPUT);
+  pinMode(ECHO_PIN_L, INPUT);
+  pinMode(ECHO_PIN_R, INPUT);
+  pinMode(ECHO_PIN_F, INPUT);
 
   //funcoes
   enable_barcode_scan();
@@ -188,7 +195,7 @@ void take_decision_state() {
 // ----------------------- ESTADOS ------------------------
 
 int check_state_A() {
-  if (get_distance('M') > DOOR_DISTANCE
+  if (get_distance('F') > DOOR_DISTANCE
       && get_distance('L') <= WALL_DISTANCE
       && get_distance('R') <= WALL_DISTANCE)
     return 1;
@@ -197,14 +204,14 @@ int check_state_A() {
 }
 
 int check_state_B() {
-  if (get_distance('M') >= COLIDER_DISTANCE)
+  if (get_distance('F') >= COLIDER_DISTANCE)
     return 1;
 
   return 0;
 }
 
 int check_state_C() {
-  if (get_distance('M') <= COLIDER_DISTANCE
+  if (get_distance('F') <= COLIDER_DISTANCE
       && get_distance('L') > DOOR_DISTANCE
       && get_distance('R') > DOOR_DISTANCE)
     return 1;
@@ -213,7 +220,7 @@ int check_state_C() {
 }
 
 int check_state_D() {
-  if (get_distance('M') >= COLIDER_DISTANCE
+  if (get_distance('F') >= COLIDER_DISTANCE
       && get_distance('L') <= WALL_DISTANCE
       && get_distance('R') <= WALL_DISTANCE)
     return 1;
@@ -222,7 +229,7 @@ int check_state_D() {
 }
 
 int check_state_E() {
-  if (get_distance('M') >= COLIDER_DISTANCE
+  if (get_distance('F') >= COLIDER_DISTANCE
       && get_distance('L') <= WALL_DISTANCE
       && get_distance('R') > DOOR_DISTANCE)
     return 1;
@@ -231,7 +238,7 @@ int check_state_E() {
 }
 
 int check_state_F() {
-  if (get_distance('M') >= COLIDER_DISTANCE
+  if (get_distance('F') >= COLIDER_DISTANCE
       && get_distance('L') > WALL_DISTANCE
       && get_distance('R') <= WALL_DISTANCE)
     return 1;
@@ -240,7 +247,7 @@ int check_state_F() {
 }
 
 int check_state_G() {
-  if (get_distance('M') <= COLIDER_DISTANCE
+  if (get_distance('F') <= COLIDER_DISTANCE
       || (get_distance('L') <= WALL_DISTANCE
           && get_distance('R') <= WALL_DISTANCE))
     return 1;
@@ -299,21 +306,35 @@ int read_barCode() {
   return 0;
 }
 
-//recupera a distancia de acordo com o pino pedido (L,M,R) [Em Cm]
-long get_distance(char direction) {
-  long duration = 0;
-  digitalWrite(trig_Pin, LOW);
-  delayMicroseconds(2);
-  digitalWrite(trig_Pin, HIGH);
-  delayMicroseconds(10);
-  digitalWrite(trig_Pin, LOW);
+NewPing sonarFront(TRIG_PIN_F, ECHO_PIN_F, MAX_DISTANCE);
+NewPing sonarLeft(TRIG_PIN_L, ECHO_PIN_L, MAX_DISTANCE);
+NewPing sonarRight(TRIG_PIN_R, ECHO_PIN_R, MAX_DISTANCE);
 
-  if (direction == 'L')
-    duration = pulseIn(echo_Pin_L, HIGH);
-  else if (direction == 'R')
-    duration = pulseIn(echo_Pin_R, HIGH);
-  else
-    duration = pulseIn(echo_Pin_M, HIGH);
+int get_distance(char p) {
+  switch (p) {
+    case 'L': {
+        unsigned int cmL = sonarLeft.ping() / US_ROUNDTRIP_CM;
+        debug_ultrasonic("L", cmL);
+        return cmL;
+      }
+    case 'R': {
+        unsigned int cmR = sonarRight.ping() / US_ROUNDTRIP_CM;
+        debug_ultrasonic("R", cmR);
+        return cmR;
+      }
+    case 'F': {
+        unsigned int cmF = sonarFront.ping() / US_ROUNDTRIP_CM;
+        debug_ultrasonic("F", cmF);
+        return cmF;
+      }
+  }
 
-  return duration / 29 / 2 ;
+  // throw invalid_argument( "the argument must be one of three characters L to left R to right and F front" );
+}
+
+void debug_ultrasonic(String p, int cm) {
+  Serial.print(p + " ");
+  Serial.print(cm);
+  Serial.print("cm");
+  Serial.println();
 }
