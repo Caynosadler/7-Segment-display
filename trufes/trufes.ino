@@ -8,6 +8,11 @@ Coded by: João Carlos Pandolfi Santana (06/06/2015)
 */
 #include <NewPing.h>
 #include <Wire.h>
+#include <Servo.h>
+
+// Default Values
+#define DEBUG false
+#define DEFAULT_SPEED 140
 
 //Sensores Ultrassom
 #define ECHO_PIN_F 2
@@ -52,6 +57,8 @@ int states_bomb [11][3] = {
 char condition_states_bomb[11] = {'A', 'B', 'C', 'D', 'D', 'G', 'G', 'E', 'F', 'E', 'M'};
 
 //Inicialização do robô
+Servo claw;
+
 void setup() {
   Serial.begin(9600);
   //Sensores de ultrassom
@@ -61,6 +68,9 @@ void setup() {
   pinMode(ECHO_PIN_L, INPUT);
   pinMode(ECHO_PIN_R, INPUT);
   pinMode(ECHO_PIN_F, INPUT);
+
+  //Garra
+  claw.attach(9);
 
   //funcoes
   enable_barcode_scan();
@@ -75,12 +85,12 @@ void loop() {
 
 //ativa leitura do cod de barras
 void enable_barcode_scan() {
-  //IMPLEMENTAR
+  //TODO
 }
 
 //desativa leitura do cod de barras
 void disable_barcode_scan() {
-  //IMPLEMENTAR
+  //TODO
 }
 
 // ====================== MAQUINA DE ESTADOS =======================
@@ -152,41 +162,33 @@ int calculate_state_bomb() {
 //Toma decisão após a troca de estado
 void take_decision_state() {
   //para robo para tomada de decisao
-  move_robot_back();
+  motorsStop();
 
   //toma decisao
   if (actual_state == 0) {
     enable_barcode_scan();
-    move_robot_front();
-  }
-  else if (actual_state == 1) {
+    move2Front();
+  } else if (actual_state == 1) {
     disable_barcode_scan();
-    move_robot_front();
-  }
-  else if (actual_state == 2) { //escolhe entre direita e esquerda
-    gira(-90); //escolhi girar para Esquerda [ver se coloca random]
-    move_robot_front();
-  }
-  else if (actual_state == 3) {
-    move_robot_front();
-  }
-  else if (actual_state == 4 || actual_state == 6) {
-    gira(-90); //viro para esquerda
-    move_robot_front();
-  }
-  else if (actual_state == 5 || actual_state == 7) {
-    gira(90); //viro para direita
-    move_robot_front();
-  }
-  else if (actual_state == 8) {
-    gira(-90); //gira para esquerda
+    move2Front();
+  } else if (actual_state == 2) { //escolhe entre direita e esquerda
+    turn(-90); //escolhi girar para Esquerda [ver se coloca random]
+    move2Front();
+  } else if (actual_state == 3) {
+    move2Front();
+  } else if (actual_state == 4 || actual_state == 6) {
+    turn(-90); //viro para esquerda
+    move2Front();
+  } else if (actual_state == 5 || actual_state == 7) {
+    turn(90); //viro para direita
+    move2Front();
+  } else if (actual_state == 8) {
+    turn(-90); //gira para esquerda
     //teoricamente neste ponto, está de cara com a bomba
-  }
-  else if (actual_state == 9) {
-    gira(90); //gira para direita
+  } else if (actual_state == 9) {
+    turn(90); //gira para direita
     //teoricamente neste ponto, está de cara com a bomba
-  }
-  else if (actual_state == 10) {
+  } else if (actual_state == 10) {
     //### ESTA DE CARA COM A BOMBA ###
     //ALGORITMO PARA APERTAR O BOTAO
   }
@@ -195,9 +197,9 @@ void take_decision_state() {
 // ----------------------- ESTADOS ------------------------
 
 int check_state_A() {
-  if (get_distance('F') > DOOR_DISTANCE
-      && get_distance('L') <= WALL_DISTANCE
-      && get_distance('R') <= WALL_DISTANCE)
+  if (get_distance('F') > DOOR_DISTANCE &&
+      get_distance('L') <= WALL_DISTANCE &&
+      get_distance('R') <= WALL_DISTANCE)
     return 1;
 
   return 0;
@@ -211,45 +213,45 @@ int check_state_B() {
 }
 
 int check_state_C() {
-  if (get_distance('F') <= COLIDER_DISTANCE
-      && get_distance('L') > DOOR_DISTANCE
-      && get_distance('R') > DOOR_DISTANCE)
+  if (get_distance('F') <= COLIDER_DISTANCE &&
+      get_distance('L') > DOOR_DISTANCE &&
+      get_distance('R') > DOOR_DISTANCE)
     return 1;
 
   return 0;
 }
 
 int check_state_D() {
-  if (get_distance('F') >= COLIDER_DISTANCE
-      && get_distance('L') <= WALL_DISTANCE
-      && get_distance('R') <= WALL_DISTANCE)
+  if (get_distance('F') >= COLIDER_DISTANCE &&
+      get_distance('L') <= WALL_DISTANCE &&
+      get_distance('R') <= WALL_DISTANCE)
     return 1;
 
   return 0;
 }
 
 int check_state_E() {
-  if (get_distance('F') >= COLIDER_DISTANCE
-      && get_distance('L') <= WALL_DISTANCE
-      && get_distance('R') > DOOR_DISTANCE)
+  if (get_distance('F') >= COLIDER_DISTANCE &&
+      get_distance('L') <= WALL_DISTANCE &&
+      get_distance('R') > DOOR_DISTANCE)
     return 1;
 
   return 0;
 }
 
 int check_state_F() {
-  if (get_distance('F') >= COLIDER_DISTANCE
-      && get_distance('L') > WALL_DISTANCE
-      && get_distance('R') <= WALL_DISTANCE)
+  if (get_distance('F') >= COLIDER_DISTANCE &&
+      get_distance('L') > WALL_DISTANCE &&
+      get_distance('R') <= WALL_DISTANCE)
     return 1;
 
   return 0;
 }
 
 int check_state_G() {
-  if (get_distance('F') <= COLIDER_DISTANCE
-      || (get_distance('L') <= WALL_DISTANCE
-          && get_distance('R') <= WALL_DISTANCE))
+  if (get_distance('F') <= COLIDER_DISTANCE ||
+     (get_distance('L') <= WALL_DISTANCE &&
+      get_distance('R') <= WALL_DISTANCE))
     return 1;
 
   return 0;
@@ -260,49 +262,36 @@ int check_state_G() {
 // ------- ROBO ---------
 
 //gira 90 ou -90 graus
-void gira(int angle) {
-  //IMPLEMENTAR
+void turn(int angle) {
+  //TODO
 }
 
 //para robo
-void move_robot_stop() {
-  stop_motor('L');
-  stop_motor('R');
+void motorsStop() {
+  //TODO
 }
 
 //move o robo para frente
-void move_robot_front() {
-  move_Front('L');
-  move_Front('R');
+void move2Front() {
+  move2Front(DEFAULT_SPEED);
+}
+void move2Front(int speed) {
+  //TODO
 }
 
 //move o robo para tras
-void move_robot_back() {
-  move_Back('L');
-  move_Back('R');
+void move2Back() {
+  move2Back(DEFAULT_SPEED);
 }
 
-// -------- MOTOR ---------
-
-//para o motor
-void stop_motor(char direction) {
-  //IMPLEMENTAR
-}
-
-//move motor para traz
-void move_Back(char direction) {
-  //IMPLEMENTAR
-}
-
-//move motor para frente
-void move_Front(char direction) {
-  //IMPLEMENTAR
+void move2Back(int speed) {
+  //TODO
 }
 
 // ============== CONTROLE DE SENSORES ======================
 
 int read_barCode() {
-  //IMPLEMENTAR
+  //TODO
   return 0;
 }
 
@@ -313,18 +302,21 @@ NewPing sonarRight(TRIG_PIN_R, ECHO_PIN_R, MAX_DISTANCE);
 int get_distance(char p) {
   switch (p) {
     case 'L': {
-        unsigned int cmL = sonarLeft.ping() / US_ROUNDTRIP_CM;
-        debug_ultrasonic("L", cmL);
+        int cmL = sonarLeft.ping() / US_ROUNDTRIP_CM;
+        if(DEBUG)
+          debug_ultrasonic('L', cmL);
         return cmL;
       }
     case 'R': {
-        unsigned int cmR = sonarRight.ping() / US_ROUNDTRIP_CM;
-        debug_ultrasonic("R", cmR);
+        int cmR = sonarRight.ping() / US_ROUNDTRIP_CM;
+        if(DEBUG)
+          debug_ultrasonic('R', cmR);
         return cmR;
       }
     case 'F': {
-        unsigned int cmF = sonarFront.ping() / US_ROUNDTRIP_CM;
-        debug_ultrasonic("F", cmF);
+        int cmF = sonarFront.ping() / US_ROUNDTRIP_CM;
+        if(DEBUG)
+          debug_ultrasonic('F', cmF);
         return cmF;
       }
   }
@@ -332,9 +324,27 @@ int get_distance(char p) {
   // throw invalid_argument( "the argument must be one of three characters L to left R to right and F front" );
 }
 
-void debug_ultrasonic(String p, int cm) {
+void debug_ultrasonic(char p, int cm) {
   Serial.print(p + " ");
   Serial.print(cm);
   Serial.print("cm");
   Serial.println();
+  delay(500);
+}
+
+void moveClaw(char action) {
+  int pos = 2;
+  
+  switch(action) {
+    case 'p':
+      for(pos = 75; pos >= 2; pos -= 1) {
+        claw.write(pos);
+        delay(15);
+      }
+    case 'c':
+      for(pos = 2; pos < 75; pos += 1) {
+        claw.write(pos);
+        delay(15);
+      }
+  }
 }
