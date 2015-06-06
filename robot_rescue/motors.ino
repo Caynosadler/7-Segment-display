@@ -8,15 +8,15 @@ void motorsWrite() {
   digitalWrite(brake_b, LOW);
   digitalWrite(dir_a, LOW);
   digitalWrite(dir_b, LOW);
-  analogWrite(pwm_a, rightSpeed);
-  analogWrite(pwm_b, leftSpeed);
+  analogWrite(PWM_A, rightSpeed);
+  analogWrite(PWM_B, leftSpeed);
 
   //  digitalWrite(brake_a, LOW); // trás
   //  digitalWrite(brake_b, LOW);
   //  digitalWrite(dir_a, HIGH);
   //  digitalWrite(dir_b, HIGH);
-  //  analogWrite(pwm_a, 100);
-  //  analogWrite(pwm_b, 100);
+  //  analogWrite(PWM_A, 100);
+  //  analogWrite(PWM_B, 100);
   //  delay(2000);
 }
 
@@ -33,11 +33,11 @@ void turn(char d) {
     digitalWrite(dir_b, HIGH);
     //digitalWrite(brake_a, LOW); // vira para direita
     //digitalWrite(brake_b, LOW);
-    analogWrite(pwm_a, rightSpeed);
-    analogWrite(pwm_b, leftSpeed);
+    analogWrite(PWM_A, rightSpeed);
+    analogWrite(PWM_B, leftSpeed);
     delay(turnDelay);
-    analogWrite(pwm_a, 0);
-    analogWrite(pwm_b, 0);
+    analogWrite(PWM_A, 0);
+    analogWrite(PWM_B, 0);
   }
 
   if (d == 'R') {
@@ -45,21 +45,21 @@ void turn(char d) {
     digitalWrite(dir_b, LOW);
     //digitalWrite(brake_a, LOW); // vira para direita
     //digitalWrite(brake_b, LOW);
-    analogWrite(pwm_a, rightSpeed);
-    analogWrite(pwm_b, leftSpeed);
+    analogWrite(PWM_A, rightSpeed);
+    analogWrite(PWM_B, leftSpeed);
     delay(turnDelay);
-    analogWrite(pwm_a, 0);
-    analogWrite(pwm_b, 0);
+    analogWrite(PWM_A, 0);
+    analogWrite(PWM_B, 0);
   }
 }
 
 void straightLine(long cmL, long cmR) {
   if (cmL <= 20) {
-    analogWrite(pwm_a, rightSpeed - turnSpeed);
+    analogWrite(PWM_A, rightSpeed - turnSpeed);
   }
   
   if (cmR <= 20) { 
-    analogWrite(pwm_b, leftSpeed - turnSpeed);
+    analogWrite(PWM_B, leftSpeed - turnSpeed);
     }
 }
 

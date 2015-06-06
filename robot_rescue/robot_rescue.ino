@@ -1,13 +1,14 @@
 #include <NewPing.h>
 #include <Wire.h>
 #include <HMC5883L.h>
+#include <Servo.h>
 
 #define dir_a 12
 #define dir_b 13
 #define brake_a 9
 #define brake_b 8
-#define pwm_a 3
-#define pwm_b 11
+#define PWM_A 3
+#define PWM_B 11
 
 #define ECHO_PIN_F 2
 #define TRIG_PIN_F 4
@@ -22,6 +23,8 @@ HMC5883L compass;
 // Record any errors that may occur in the compass.
 int error = 0;
 
+Servo claw;
+
 void setup()
 {
   // initialize serial communication:
@@ -31,8 +34,8 @@ void setup()
   pinMode(dir_b, OUTPUT);
   //pinMode(brake_a, OUTPUT);
   //pinMode(brake_b, OUTPUT);
-  pinMode(pwm_a, OUTPUT);
-  pinMode(pwm_b, OUTPUT);
+  pinMode(PWM_A, OUTPUT);
+  pinMode(PWM_B, OUTPUT);
 
   pinMode(TRIG_PIN_L, OUTPUT);
   pinMode(TRIG_PIN_R, OUTPUT);
@@ -41,6 +44,8 @@ void setup()
   pinMode(ECHO_PIN_R, INPUT);
   pinMode(ECHO_PIN_F, INPUT);
   
+  claw.attach(9);
+    
   Serial.println("Starting the I2C interface.");
   Wire.begin(); // Start the I2C interface.
   
@@ -70,14 +75,14 @@ NewPing sonarRight(TRIG_PIN_R, ECHO_PIN_R, MAX_DISTANCE);
 
 void loop()
 {
-  //unsigned int cmF = sonarFront.ping() / US_ROUNDTRIP_CM;
-  //debugUltrasonic("F", cmF);
+  unsigned int cmF = sonarFront.ping() / US_ROUNDTRIP_CM;
+  debugUltrasonic("F", cmF);
   
-  //unsigned int cmL = sonarLeft.ping() / US_ROUNDTRIP_CM;
-  //debugUltrasonic("L", cmL);
+  unsigned int cmL = sonarLeft.ping() / US_ROUNDTRIP_CM;
+  debugUltrasonic("L", cmL);
   
-  //unsigned int cmR = sonarRight.ping() / US_ROUNDTRIP_CM;
-  //debugUltrasonic("R", cmR);
+  unsigned int cmR = sonarRight.ping() / US_ROUNDTRIP_CM;
+  debugUltrasonic("R", cmR);
 
   //if (cmF <= 7) {
     //motorsStop();
@@ -86,12 +91,15 @@ void loop()
     //motorsWrite();
     //straightLine(cmL, cmR);
   //}
-  bussula();
+  moveClaw();
+  //claw.write(33);
+  //claw.write(70);
+  bussula(true);
   //delay(50);
 }
 
-//float getCompass(bool debug = false) {
-void bussula() {
+//float getCompass(bool debug) {
+float bussula(bool debug ) {
   // Retrive the raw values from the compass (not scaled).
   MagnetometerRaw raw = compass.ReadRawAxis();
   // Retrived the scaled values from the compass (scaled to the configured scale).
@@ -122,14 +130,15 @@ void bussula() {
   float headingDegrees = heading * 180 / M_PI;
 
   // Output the data via the serial port.
-  outputCompass(raw, scaled, heading, headingDegrees);
+  if (debug)
+    outputCompass(raw, scaled, heading, headingDegrees);
 
   // Normally we would delay the application by 66ms to allow the loop
   // to run at 15Hz (default bandwidth for the HMC5883L).
   // However since we have a long serial out (104ms at 9600) we will let
   // it run at its natural speed.
   // delay(66);
-  //return headingDegrees;
+  return headingDegrees;
 }
 
 // Output the data down the serial port.
@@ -153,4 +162,18 @@ void outputCompass(MagnetometerRaw raw, MagnetometerScaled scaled, float heading
   Serial.print(" Radians  \t");
   Serial.print(headingDegrees);
   Serial.println(" Degrees  \t");
+}
+
+int pos = 2;
+void moveClaw() {
+  for(pos = 2; pos < 75; pos += 1)  // goes from 0 degrees to 180 degrees
+  {                                  // in steps of 1 degree
+    claw.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+  }
+  for(pos = 75; pos>=2; pos-=1)     // goes from 180 degrees to 0 degrees
+  {
+    claw.write(pos);              // tell servo to go to position in variable 'pos'
+    delay(15);                       // waits 15ms for the servo to reach the position
+  }
 }
